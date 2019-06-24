@@ -6,21 +6,10 @@ import io
 import struct
 
 
-"""
-
-class flushfile(io.FileIO):
-    def __init__(self, f):
-        self.f = f
-    def write(self, x):
-        self.f.write(x)
-        self.f.flush()
-
-sys.stdout = flushfile(sys.stdout)
-
-"""
-
-
 def timing(f):
+    """
+    Decorator used for time measurement
+    """
     @wraps(f)
     def wrapper(*args, **kwargs):
         start = time()
@@ -31,13 +20,13 @@ def timing(f):
     return wrapper
 
 class TraceRoute():
-    def __init__(self, dest_name, max_hops = 30, wait_time = 60):
+    def __init__(self, dest_name, max_hops = 30, wait_time = 5):
         self.dest_name = dest_name
         self.max_hops = max_hops
         self.wait_time = wait_time
         self.port = 33434 # official traceroute port
-        self.send_port = None
-        self.recv_port = None
+        self.send_port = None #placeholder for transmitter
+        self.recv_port = None #placeholder for receiver
 
 
     def create_ports(self, ttl=30):
@@ -50,24 +39,27 @@ class TraceRoute():
         try:
             self.recv_port.bind(('', self.port))
         except socket.error as e:
-            raise IOError('Unable to bind receiver socket')
+            raise IOError('Cannot bind receiver socket')
         #transmitter
         self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
     def ping(self):
+        """
+        Send UDP echo request with specified ttl, and wait for answer
+        """
         time_ping_start = time()
         self.send_port.sendto(bytes("", "utf-8"), (self.dest_addr, self.port))
 
         try:
-            _, curr_addr = self.recv_port.recvfrom(512)
+            _, curr_addr = self.recv_port.recvfrom(512) #get response
             time_ping_done = time()
-            resulting_time = time_ping_done - time_ping_start
+            resulting_time = time_ping_done - time_ping_start #get time
             curr_addr = curr_addr[0] #cause we get tuple here
         except socket.error as e:
             curr_addr = None
             resulting_time = None
-            raise IOError("Socket error: {}".format(e))
+            raise IOError("Error: {}".format(e))
         finally:
             self.recv_port.close()
             self.send_port.close()
@@ -87,7 +79,8 @@ class TraceRoute():
             self.create_ports(ttl)
             last_addr, last_time = self.ping()
 
-            print('TTL:{} we are at: {} it took {}'.format(ttl, last_addr, last_time))
+            print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
 
             if last_addr == self.dest_addr:
+                print("Final destination reached")
                 break
