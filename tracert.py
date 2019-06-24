@@ -78,13 +78,16 @@ class TraceRoute():
             raise IOError("Cannot find address for given host name")
 
         print("traceroute to {} with ip {}".format(self.dest_name, self.dest_addr))
-
+        
         for ttl in range(1, self.max_hops+1):
-            self.create_ports(ttl)
-            last_addr, last_time = self.ping()
+            try:
+                self.create_ports(ttl)
+                last_addr, last_time = self.ping()
+            except:
+                raise
+            finally:
+                print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
 
-            print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
-
-            if last_addr == self.dest_addr:
-                print("Final destination reached")
-                break
+                if last_addr == self.dest_addr:
+                    print("Final destination reached")
+                    break
