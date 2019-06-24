@@ -6,9 +6,6 @@ import io
 import struct
 
 
-ICMP_ECHO_REQUEST = 8
-
-
 def timing(f):
     """
     Decorator used for time measurement
@@ -23,7 +20,7 @@ def timing(f):
     return wrapper
 
 class TraceRoute():
-    def __init__(self, send_proto=icmp, max_hops = 30, wait_time = 5):
+    def __init__(self, send_proto="icmp", max_hops = 30, wait_time = 5):
         """
         send_proto = icmp or udp
         """
@@ -38,7 +35,7 @@ class TraceRoute():
         self.port = 33434 # official traceroute port
         self.send_port = None #placeholder for transmitter
         self.recv_port = None #placeholder for receiver
-
+        self.packet = None #placeholder
 
     def create_ports(self, ttl=30):
         """
@@ -55,20 +52,22 @@ class TraceRoute():
         self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, self.send_proto)
         self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
+        #PREPARE PACKET
+        if send_proto == "icmp":
+            packet_id = int(random.random() % 65535)
+            self.packet = create_packet(packet_id, dbytes)
+        else:
+            self.packet = bytes("", "utf-8")
+
+
     def ping(self):
         """
         Send UDP echo request with specified ttl, and wait for answer
         """
-        #PREPARE PACKET
-        if send_proto == "icmp":
-            packet_id = int(random.random() % 65535)
-            packet = create_packet(packet_id, dbytes)
-        else:
-            packet = bytes("", "utf-8")
 
         #SEND PACKET
         time_ping_start = time()
-        self.send_port.sendto(packet, (self.dest_addr, self.port))
+        self.send_port.sendto(self.packet, (self.dest_addr, self.port))
 
         #RECEIVE PACKET
         try:
@@ -97,14 +96,14 @@ class TraceRoute():
         except socket.error as err:
             raise IOError("Cannot find address for given host name")
 
-        print("traceroute to {} with ip {}".format(self.dest_name, self.dest_addr))
+        print("traceroute to {} with ip {}".format(dest_name, self.dest_addr))
 
         for ttl in range(1, self.max_hops+1):
             try:
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
             except Exception as e:
-                print("Error happened during run".format(e))
+                print("Error happened during run: {}".format(e))
                 break
             else:
                 print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
@@ -115,26 +114,49 @@ class TraceRoute():
 
 
         def checksum(package):
-            suma = 0
-            to = (len(package)/2) * 2
-            count = 0
-            while count < to:
-                val = ord(package[count+1]) * 256 + ord(package[count])
-                suma += val
-                suma &= 0xfffffff
-                count += 2
-            if to < len(package):
-                suma += ord(package[len(package) - 1])
-                suma &= 0xfffffff
-            suma = (suma >> 16) + (suma & 0xffff)
-            suma += (suma >> 16)
-            answer = ~suma
-            answer &= 0xffff
-            return (answer >> 8) | (answer << 8 & 0xff00)
+            """
+            checksum taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
+            """
+            packet_len = len(package)
+            sum = 0
+            for i in range(0, packet_len, 2):
+                if i + 1 < packet_len:
+                    # Fold 2 neighbour bytes into a number and add it to the sum
+                    sum += package[i] + (package[i + 1] << 8)
+                else:
+                    # If there is an odd number of bytes, fake the second byte
+                    sum += package[i] + 0
+            # Add carry bit to the sum
+            sum = (sum >> 16) + (sum & 0xffff)
+            # Truncate to 16 bits and return the checksum
+            return ~sum & 0xffff
 
 
-        def create_packet(id, dbytes):
-            header = struct.pack('bbHHh', ICMP_ECHO_REQUEST, 0,0,id,1)
-            data = dbytes * 'P'
-            pkg_checksum = checksum(header+data)
-            return struct.pack('bbHHh', ICMP_ECHO_REQUEST, 0, socket.htons(pkg_checksum), id, 1) + data
+        def create_packet():
+            """
+            Creatin of packet taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
+            """
+             # Packet header definition
+            iphdr_len = 60                  # Max is 60, but in our case for IPv4 it should be 20 bytes. Adjust it after recv()
+            icmphdr_len = 8                 # ICMP header length is 8 bytes
+            icmp_type_request = 8           # ICMP IPv4 ECHO_REQUEST
+            icmp_type_reply = 0             # ICMP IPv4 ECHO_REPLY
+
+            icmp_code = 0
+            icmp_checksum = 0
+            icmp_id = os.getpid() & 0xffff  # Generate ID field using PID converted to 16 bit
+            # Some ICMP payload examples. Do not make them too long:
+            icmp_data = b'\x50\x49\x4E\x47\x2D\x50\x4F\x4E\x47\x20\x46\x52\x4F\x4D' \
+                        b'\x20\x5A\x4D\x45\x59\x32\x30\x30\x30\x30\x40\x59\x41\x48' \
+                        b'\x4F\x4F\x2E\x43\x4F\x4D'
+            # icmp_data = b'12345678' + b'1234567890' * 4
+
+            data_len = len(icmp_data)
+
+            send_timestamp = time.time()    # Packet creation time
+            out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
+                                     icmp_checksum, icmp_id, sequence, int(send_timestamp), icmp_data)
+            icmp_checksum = clk_chksum(out_packet)
+            out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
+                                     icmp_checksum, icmp_id, sequence, int(send_timestamp), icmp_data)
+             return out_packet
