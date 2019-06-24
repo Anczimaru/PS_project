@@ -83,9 +83,9 @@ class TraceRoute():
             try:
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
-            except:
-                raise
-            finally:
+            except Exception as e:
+                Print(Error happened during run".format(e))
+            else:
                 print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
 
                 if last_addr == self.dest_addr:
