@@ -90,7 +90,7 @@ class TraceRoute():
             self.create_ports(ttl)
             last_addr, last_time = self.ping()
 
-            print('{:<4} {}'.format(self.ttl, last_addr[0]))
+            print('{:<4} {}'.format(ttl, last_addr[0]))
 
             if last_addr == self.dest_addr:
                 break
