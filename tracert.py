@@ -35,7 +35,7 @@ class TraceRoute():
         self.wait_time = wait_time
         self.port = 33434 # official traceroute port
 
-    def create_ports(self, ttl):
+    def create_ports(self, ttl=30):
         """
         Create and keep ports updated
         """
