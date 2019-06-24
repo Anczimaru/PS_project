@@ -38,7 +38,7 @@ class TraceRoute():
         self.packet = None #placeholder
 
 
-    def checksum(package):
+    def checksum(self, package):
         """
         checksum taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
         """
@@ -54,14 +54,18 @@ class TraceRoute():
         # Add carry bit to the sum
         sum = (sum >> 16) + (sum & 0xffff)
         # Truncate to 16 bits and return the checksum
+        
         return ~sum & 0xffff
 
 
-    def create_packet():
+    
+    def create_packet(self):
         """
         Creatin of packet taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
         """
-         # Packet header definition
+        
+        # Packet header definition
+        
         iphdr_len = 60                  # Max is 60, but in our case for IPv4 it should be 20 bytes. Adjust it after recv()
         icmphdr_len = 8                 # ICMP header length is 8 bytes
         icmp_type_request = 8           # ICMP IPv4 ECHO_REQUEST
@@ -78,12 +82,12 @@ class TraceRoute():
 
         data_len = len(icmp_data)
 
-        send_timestamp = time.time()    # Packet creation time
+        send_timestamp = time()    # Packet creation time
         out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
-                                 icmp_checksum, icmp_id, sequence, int(send_timestamp), icmp_data)
-        icmp_checksum = clk_chksum(out_packet)
+                                 icmp_checksum, icmp_id, 0, int(send_timestamp), icmp_data)
+        icmp_checksum = self.checksum(out_packet)
         out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
-                                 icmp_checksum, icmp_id, sequence, int(send_timestamp), icmp_data)
+                                 icmp_checksum, icmp_id, 0, int(send_timestamp), icmp_data)
         return out_packet
 
 
@@ -104,7 +108,7 @@ class TraceRoute():
 
         #PREPARE PACKET
         if self.send_proto == socket.IPPROTO_ICMP:
-            self.packet = create_packet()
+            self.packet = self.create_packet()
         else:
             self.packet = bytes("", "utf-8")
 
@@ -153,6 +157,7 @@ class TraceRoute():
                 last_addr, last_time = self.ping()
             except Exception as e:
                 print("Error happened during run: {}".format(e))
+                raise
                 break
             else:
                 print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
