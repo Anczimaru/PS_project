@@ -85,6 +85,7 @@ class TraceRoute():
                 last_addr, last_time = self.ping()
             except Exception as e:
                 print("Error happened during run".format(e))
+                break
             else:
                 print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
 
