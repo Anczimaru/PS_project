@@ -3,9 +3,11 @@ import socket
 from functools import wraps
 from time import time
 import io
+import struct
 
 
 """
+
 class flushfile(io.FileIO):
     def __init__(self, f):
         self.f = f
@@ -29,7 +31,7 @@ def timing(f):
     return wrapper
 
 class TraceRoute():
-    def __init__(self, dest_name, max_hops = 30, wait_time = 0.5):
+    def __init__(self, dest_name, max_hops = 30, wait_time = 60):
         self.dest_name = dest_name
         self.max_hops = max_hops
         self.wait_time = wait_time
@@ -51,11 +53,6 @@ class TraceRoute():
             raise IOError('Unable to bind receiver socket')
         #transmitter
         self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        print(socket.IPPROTO_UDP)
-        print(type(socket.IPPROTO_UDP))
-        print(socket.getprotobyname('udp'))
-        print(type(socket.getprotobyname('udp')))
-        print(ttl, type(ttl))
         self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
     def ping(self):
@@ -63,10 +60,10 @@ class TraceRoute():
         self.send_port.sendto(bytes("", "utf-8"), (self.dest_addr, self.port))
 
         try:
-            data, curr_addr = self.recv_port.recvfrom(512)
+            _, curr_addr = self.recv_port.recvfrom(512)
             time_ping_done = time()
             resulting_time = time_ping_done - time_ping_start
-            curr_addr = curr_addr[0]
+            curr_addr = curr_addr[0] #cause we get tuple here
         except socket.error as e:
             curr_addr = None
             resulting_time = None
@@ -90,7 +87,7 @@ class TraceRoute():
             self.create_ports(ttl)
             last_addr, last_time = self.ping()
 
-            print('{:<4} {}'.format(ttl, last_addr[0]))
+            print('TTL:{} we are at: {} it took {}'.format(ttl, last_addr, last_time))
 
             if last_addr == self.dest_addr:
                 break
