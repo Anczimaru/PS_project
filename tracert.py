@@ -56,13 +56,13 @@ class TraceRoute():
             time_ping_done = time()
             resulting_time = time_ping_done - time_ping_start #get time
             curr_addr = curr_addr[0] #cause we get tuple here
+        except socket.timeout:
+            print("Message timedout")
+            raise
         except socket.error as e:
             curr_addr = None
             resulting_time = None
             print("Error: {}".format(e))
-            raise
-        except socket.timeout:
-            print("Message timedout")
             raise
         finally:
             self.recv_port.close()
