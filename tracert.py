@@ -59,7 +59,11 @@ class TraceRoute():
         except socket.error as e:
             curr_addr = None
             resulting_time = None
-            raise IOError("Error: {}".format(e))
+            print("Error: {}".format(e))
+            raise
+        except socket.timeout:
+            print("Message timedout")
+            raise
         finally:
             self.recv_port.close()
             self.send_port.close()
