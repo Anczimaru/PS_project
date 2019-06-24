@@ -86,7 +86,7 @@ class TraceRoute():
 
         print("traceroute to {} with ip {}".format(self.dest_name, self.dest_addr))
 
-        for ttl in range(self.max_hops):
+        for ttl in range(1, self.max_hops+1):
             self.create_ports(ttl)
             last_addr, last_time = self.ping()
 
