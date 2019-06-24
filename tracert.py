@@ -28,8 +28,9 @@ class TraceRoute():
         send_proto = icmp or udp
         """
         if send_proto == "udp":
-
-
+            self.send_proto = socket.IPPROTO_UDP
+        else:
+            send_proto = socket.IPPROTO_ICMP
 
         self.dest_name = None
         self.max_hops = max_hops
@@ -51,7 +52,7 @@ class TraceRoute():
         except socket.error as e:
             raise IOError('Cannot bind receiver socket')
         #transmitter
-        self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, self.send_proto)
         self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
     def ping(self):
