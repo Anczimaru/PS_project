@@ -6,6 +6,9 @@ import io
 import struct
 
 
+ICMP_ECHO_REQUEST = 8
+
+
 def timing(f):
     """
     Decorator used for time measurement
@@ -20,8 +23,15 @@ def timing(f):
     return wrapper
 
 class TraceRoute():
-    def __init__(self, dest_name, max_hops = 30, wait_time = 5):
-        self.dest_name = dest_name
+    def __init__(self, send_proto=icmp, max_hops = 30, wait_time = 5):
+        """
+        send_proto = icmp or udp
+        """
+        if send_proto == "udp":
+
+
+
+        self.dest_name = None
         self.max_hops = max_hops
         self.wait_time = wait_time
         self.port = 33434 # official traceroute port
@@ -48,9 +58,18 @@ class TraceRoute():
         """
         Send UDP echo request with specified ttl, and wait for answer
         """
-        time_ping_start = time()
-        self.send_port.sendto(bytes("", "utf-8"), (self.dest_addr, self.port))
+        #PREPARE PACKET
+        if send_proto == "icmp":
+            packet_id = int(random.random() % 65535)
+            packet = create_packet(packet_id, dbytes)
+        else:
+            packet = bytes("", "utf-8")
 
+        #SEND PACKET
+        time_ping_start = time()
+        self.send_port.sendto(packet, (self.dest_addr, self.port))
+
+        #RECEIVE PACKET
         try:
             _, curr_addr = self.recv_port.recvfrom(512) #get response
             time_ping_done = time()
@@ -71,14 +90,14 @@ class TraceRoute():
         return curr_addr, resulting_time
 
     @timing
-    def run(self):
+    def run(self, dest_name):
         try:
-            self.dest_addr = socket.gethostbyname(self.dest_name)
+            self.dest_addr = socket.gethostbyname(dest_name)
         except socket.error as err:
             raise IOError("Cannot find address for given host name")
 
         print("traceroute to {} with ip {}".format(self.dest_name, self.dest_addr))
-        
+
         for ttl in range(1, self.max_hops+1):
             try:
                 self.create_ports(ttl)
@@ -92,3 +111,29 @@ class TraceRoute():
                 if last_addr == self.dest_addr:
                     print("Final destination reached")
                     break
+
+
+        def checksum(package):
+            suma = 0
+            to = (len(package)/2) * 2
+            count = 0
+            while count < to:
+                val = ord(package[count+1]) * 256 + ord(package[count])
+                suma += val
+                suma &= 0xfffffff
+                count += 2
+            if to < len(package):
+                suma += ord(package[len(package) - 1])
+                suma &= 0xfffffff
+            suma = (suma >> 16) + (suma & 0xffff)
+            suma += (suma >> 16)
+            answer = ~suma
+            answer &= 0xffff
+            return (answer >> 8) | (answer << 8 & 0xff00)
+
+
+        def create_packet(id, dbytes):
+            header = struct.pack('bbHHh', ICMP_ECHO_REQUEST, 0,0,id,1)
+            data = dbytes * 'P'
+            pkg_checksum = checksum(header+data)
+            return struct.pack('bbHHh', ICMP_ECHO_REQUEST, 0, socket.htons(pkg_checksum), id, 1) + data
