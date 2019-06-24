@@ -48,7 +48,7 @@ class TraceRoute():
             raise IOError('Unable to bind receiver socket')
         #transmitter
         self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
+        self.send_port.setsockopt(socket.IP_TTL, ttl)
 
     def ping(self):
         time_ping_start = time()
