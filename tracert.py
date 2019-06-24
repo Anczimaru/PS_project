@@ -27,7 +27,7 @@ class TraceRoute():
         if send_proto == "udp":
             self.send_proto = socket.IPPROTO_UDP
         else:
-            send_proto = socket.IPPROTO_ICMP
+            self.send_proto = socket.IPPROTO_ICMP
 
         self.dest_name = None
         self.max_hops = max_hops
@@ -49,13 +49,12 @@ class TraceRoute():
         except socket.error as e:
             raise IOError('Cannot bind receiver socket')
         #transmitter
-        self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, self.send_proto)
+        self.send_port = socket.socket(socket.AF_INET, socket.SOCK_RAW, self.send_proto)
         self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
         #PREPARE PACKET
-        if send_proto == "icmp":
-            packet_id = int(random.random() % 65535)
-            self.packet = create_packet(packet_id, dbytes)
+        if self.send_proto == socket.IPPROTO_ICMP:
+            self.packet = create_packet()
         else:
             self.packet = bytes("", "utf-8")
 
@@ -159,4 +158,4 @@ class TraceRoute():
             icmp_checksum = clk_chksum(out_packet)
             out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
                                      icmp_checksum, icmp_id, sequence, int(send_timestamp), icmp_data)
-             return out_packet
+            return out_packet
