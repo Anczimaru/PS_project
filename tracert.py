@@ -34,6 +34,9 @@ class TraceRoute():
         self.max_hops = max_hops
         self.wait_time = wait_time
         self.port = 33434 # official traceroute port
+        self.send_port = None
+        self.recv_port = None
+
 
     def create_ports(self, ttl=30):
         """
@@ -48,7 +51,12 @@ class TraceRoute():
             raise IOError('Unable to bind receiver socket')
         #transmitter
         self.send_port = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.send_port.setsockopt(socket.IP_TTL, ttl)
+        print(socket.IPPROTO_UDP)
+        print(type(socket.IPPROTO_UDP))
+        print(socket.getprotobyname('udp'))
+        print(type(socket.getprotobyname('udp')))
+        print(ttl, type(ttl))
+        self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
     def ping(self):
         time_ping_start = time()
