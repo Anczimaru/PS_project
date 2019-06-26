@@ -154,14 +154,16 @@ class TraceRoute():
 
         print("traceroute to {} with ip {}".format(dest_name, self.dest_addr))
 
+        tries = 0
         # MAIN LOOP
         for ttl in range(1, self.max_hops+1):
+            if tries == 3: break
             try:
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
             except Exception as e:
                 print("Error happened during run: {}".format(e))
-                break
+                tries += 1
             else:
                 try:
                     last_name = socket.gethostbyaddr(last_addr)[0]
