@@ -4,6 +4,7 @@ By M.G and F.G
 Program is adaptation of traceroute algorythm, it sends ICMP or UDP packet to given destination name and waits for response mapping everything in route to destination.
 
 Usage(best to use with sudo, cause of socket creation requiring privilages): sudo python3 main.py xxxx (for testing) - where xxxx is e.x www.google.pl
+
 As library:
 1. First create object TraceRoute
 2. call function run specifying name of destination web server(google.pl) and optionally "send_proto" as either "udp" or "icmp", default is set as "icmp"
