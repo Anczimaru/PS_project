@@ -8,4 +8,4 @@ if __name__ == "__main__":
     Tracer.run(name)
 
     print("     Running via UDP")
-    Tracer.run(name, proto = "udp")
+    Tracer.run(name, send_proto = "udp")
