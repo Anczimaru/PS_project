@@ -15,7 +15,7 @@ def timing(f):
         start = time()
         result = f(*args, **kwargs)
         end = time()
-        print ('Elapsed time: {}'.format(end-start))
+        print ('Elapsed time: {} ms'.format((end-start)*1000))
         return result
     return wrapper
 
@@ -85,21 +85,28 @@ class TraceRoute():
         Create and keep ports updated
         """
         #receiver
-        self.recv_port = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-        self.recv_port.settimeout(self.wait_time)
+        self.recv_port = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) #set proto for icmp response
+        self.recv_port.settimeout(self.wait_time) #set timeout on wait
         try:
-            self.recv_port.bind(('', self.port))
+            self.recv_port.bind(('', self.port)) #bind recv socket
         except socket.error as e:
             raise IOError('Cannot bind receiver socket')
-        #transmitter
-        self.send_port = socket.socket(socket.AF_INET, socket.SOCK_RAW, self.send_proto)
-        self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl)
 
-        #PREPARE PACKET
-        if self.send_proto == socket.IPPROTO_ICMP:
-            self.packet = self.create_packet()
+        #GET TYPE OF socket for transmitter
+        if self.send_proto == socket.IPPROTO_UDP:
+            socket_type = sock.SOCK_DGRAM
         else:
-            self.packet = bytes("", "utf-8")
+            socket_type = sock.SOCK_RAW
+
+        #transmitter
+        self.send_port = socket.socket(socket.AF_INET, socket_type, self.send_proto) #create sending socket
+        self.send_port.setsockopt(socket.SOL_IP, socket.IP_TTL, ttl) #set TTL
+
+        #PREPARE PACKET DEPENDING ON PROTOCOL USED
+        if self.send_proto == socket.IPPROTO_ICMP:
+            self.packet = self.create_packet() #icmp specific packet
+        else:
+            self.packet = bytes("", "utf-8") #empty udp packet
 
 
     def ping(self):
