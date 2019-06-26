@@ -94,9 +94,9 @@ class TraceRoute():
 
         #GET TYPE OF socket for transmitter
         if self.send_proto == socket.IPPROTO_UDP:
-            socket_type = sock.SOCK_DGRAM
+            socket_type = socket.SOCK_DGRAM
         else:
-            socket_type = sock.SOCK_RAW
+            socket_type = socket.SOCK_RAW
 
         #transmitter
         self.send_port = socket.socket(socket.AF_INET, socket_type, self.send_proto) #create sending socket
