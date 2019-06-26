@@ -35,6 +35,7 @@ class TraceRoute():
     def checksum(self, package):
         """
         checksum calculation taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137, not modified
+        Used only for ICMP packets
         """
         packet_len = len(package)
         sum = 0
@@ -54,6 +55,7 @@ class TraceRoute():
     def create_packet(self):
         """
         Creation of packet taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137, modified
+        Used only for ICMP packets
         """
         #some variables for ICMP packet
         icmp_type_request = 8           # ICMP IPv4 ECHO_REQUEST
@@ -91,7 +93,7 @@ class TraceRoute():
         #GET TYPE OF socket for transmitter
         if self.send_proto == socket.IPPROTO_UDP:
             socket_type = socket.SOCK_DGRAM
-        else:
+        else: #ICMP
             socket_type = socket.SOCK_RAW
 
         #transmitter
@@ -107,7 +109,7 @@ class TraceRoute():
 
     def ping(self):
         """
-        Send UDP echo request with specified ttl, and wait for answer
+        Send UDP/ICMP echo request with specified ttl, and wait for answer
         """
 
         #SEND PACKET
