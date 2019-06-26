@@ -163,7 +163,12 @@ class TraceRoute():
                 print("Error happened during run: {}".format(e))
                 break
             else:
-                print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
+                try:
+                    last_name = socket.gethostbyaddr(last_addr)
+                except socket.error:
+                    last_name = last_addr
+
+                print('TTL:{} we are at: {} ({}) it took {} ms'.format(ttl, last_name, last_addr, last_time*1000))
 
                 if last_addr == self.dest_addr:
                     print("Final destination reached")
