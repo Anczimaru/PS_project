@@ -164,7 +164,7 @@ class TraceRoute():
                 break
             else:
                 try:
-                    last_name = socket.gethostbyaddr(last_addr)
+                    last_name = socket.gethostbyaddr(last_addr)[0]
                 except socket.error:
                     last_name = last_addr
 
