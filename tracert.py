@@ -34,7 +34,7 @@ class TraceRoute():
 
     def checksum(self, package):
         """
-        checksum calculation taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
+        checksum calculation taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137, not modified
         """
         packet_len = len(package)
         sum = 0
@@ -48,31 +48,27 @@ class TraceRoute():
         # Add carry bit to the sum
         sum = (sum >> 16) + (sum & 0xffff)
         # Truncate to 16 bits and return the checksum
-
         return ~sum & 0xffff
-
 
 
     def create_packet(self):
         """
-        Creation of packet taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137
+        Creation of packet taken from https://gitlab.com/mezantrop/sp_ping/blob/master/sp_ping.py#L137, modified
         """
-        #code for icmp echo request
+        #some variables for ICMP packet
         icmp_type_request = 8           # ICMP IPv4 ECHO_REQUEST
-
         icmp_code = 0
         icmp_checksum = 0
         icmp_id = os.getpid() & 0xffff  # Generate ID field using PID converted to 16 bit
-
         icmp_data = b'\x21' #some random data for packet to not be empty
-
         data_len = len(icmp_data)
 
         #create packet without checksum
         send_timestamp = time()    # Packet creation time
         out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
                                  icmp_checksum, icmp_id, 0, int(send_timestamp), icmp_data)
-         #create packet with checksum
+
+        #create packet with checksum
         icmp_checksum = self.checksum(out_packet)
         out_packet = struct.pack('BBHHHQ{}s'.format(data_len), icmp_type_request, icmp_code,
                                  icmp_checksum, icmp_id, 0, int(send_timestamp), icmp_data)
@@ -118,37 +114,39 @@ class TraceRoute():
         time_ping_start = time()
         self.send_port.sendto(self.packet, (self.dest_addr, self.port))
 
-        #RECEIVE PACKET
-        try:
+        try: #RECEIVE PACKET
             _, curr_addr = self.recv_port.recvfrom(512) #get response
             time_ping_done = time()
             resulting_time = time_ping_done - time_ping_start #get time
             curr_addr = curr_addr[0] #cause we get tuple here
-        except socket.timeout:
+        except socket.timeout: #handle timeout
             print("Message timedout")
             raise
-        except socket.error as e:
+        except socket.error as e: #handle exceptions
             curr_addr = None
             resulting_time = None
             print("Error: {}".format(e))
             raise
         finally:
+            #close sockets
             self.recv_port.close()
             self.send_port.close()
 
         return curr_addr, resulting_time
+
 
     @timing
     def run(self, dest_name, send_proto="icmp"):
         """
         send_proto = "icmp" or "udp"
         """
+        #specify proto for transmission
         if send_proto == "udp":
             self.send_proto = socket.IPPROTO_UDP
         else:
             self.send_proto = socket.IPPROTO_ICMP
 
-
+        #get ip of given address
         try:
             self.dest_addr = socket.gethostbyname(dest_name)
         except socket.error as err:
@@ -156,14 +154,13 @@ class TraceRoute():
 
         print("traceroute to {} with ip {}".format(dest_name, self.dest_addr))
 
+        # MAIN LOOP
         for ttl in range(1, self.max_hops+1):
             try:
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
             except Exception as e:
                 print("Error happened during run: {}".format(e))
-                raise
-                break
             else:
                 print('TTL:{} we are at: {} it took {} ms'.format(ttl, last_addr, last_time*1000))
 
