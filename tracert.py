@@ -162,7 +162,7 @@ class TraceRoute():
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
             except Exception as e:
-                print("Error happened during run: {}".format(e))
+                print("Error happened during run: {}  try: {} of 3".format(e, tries))
                 tries += 1
             else:
                 try:
