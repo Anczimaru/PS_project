@@ -15,7 +15,7 @@ def timing(f):
         start = time()
         result = f(*args, **kwargs)
         end = time()
-        print ('Elapsed time: {} ms'.format((end-start)*1000))
+        print ('Elapsed time: {} s'.format((end-start)))
         return result
     return wrapper
 
@@ -162,8 +162,8 @@ class TraceRoute():
                 self.create_ports(ttl)
                 last_addr, last_time = self.ping()
             except Exception as e:
-                print("Error happened during run: {}  try: {} of 3".format(e, tries))
                 tries += 1
+                print("Error happened during run: {}  try: {} of 3".format(e, tries))
             else:
                 try:
                     last_name = socket.gethostbyaddr(last_addr)[0]
