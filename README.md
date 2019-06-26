@@ -19,5 +19,7 @@ TraceRoute structure:
 
 -ping() - used only for sending and receiving messages, always closes ports afterward
 
--run(dest_name, send_proto) - Main function, prepares everything then, handles all routines in order: create_ports()->ping() until final destination is reached or ping has failed or timeouted 3 times
+-run(dest_name, send_proto) - Main function, prepares everything then, handles all routines in order:
+
+create_ports()->ping() until final destination is reached or ping has failed or timeouted 3 times
 
